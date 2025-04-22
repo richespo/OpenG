@@ -11,6 +11,7 @@
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
  
 
 
@@ -56,16 +57,16 @@ static unsigned int CompileShader(unsigned int type, const std::string& source )
     glCompileShader(id);
                       
     int result;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
+    GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
     if (result == GL_FALSE)
     {
         int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
+        GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
         char* message = (char*)alloca(length * sizeof(char)) ;
-        glGetShaderInfoLog(id, length, &length, message);
+        GLCall(glGetShaderInfoLog(id, length, &length, message));
         std::cout << "Failed to compile shader" << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << std::endl;
         std::cout << message << std::endl;
-        glDeleteShader(id);
+        GLCall(glDeleteShader(id));
         return 0;
     }
     return id;
@@ -108,19 +109,19 @@ int main( )
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow *window = glfwCreateWindow( WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr );
     
-    glfwSwapInterval(1);
+    GLCall(glfwSwapInterval(1));
     
     int screenWidth, screenHeight;
-    glfwGetFramebufferSize( window, &screenWidth, &screenHeight );
+    GLCall(glfwGetFramebufferSize( window, &screenWidth, &screenHeight ));
     
     if ( nullptr == window )
     {
         std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate( );
+        GLCall(glfwTerminate( ));
         return EXIT_FAILURE;
     }
     
-    glfwMakeContextCurrent( window );
+    GLCall(glfwMakeContextCurrent( window ));
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
     // Initialize GLEW to setup the OpenGL Function pointers
@@ -131,15 +132,17 @@ int main( )
     }
     
     // Define the viewport dimensions
-    glViewport( 0, 0, screenWidth, screenHeight );
+    GLCall(glViewport( 0, 0, screenWidth, screenHeight ));
     
     // Build and compile our shader program
     ShaderProgramSource source = ParseShader("res/shaders/basic.shader");
+    /*
     std::cout << "VERTEX" << std::endl;
     std::cout << source.VertexSource << std::endl;
     std::cout << "FRAGMENT" << std::endl;
     std::cout << source.FragmentSource << std::endl;
-    {
+    */
+     {
         // Set up vertex data (and buffer(s)) and attribute pointers
         GLfloat vertices[] =
         {
@@ -156,16 +159,11 @@ int main( )
             2,3,0
         };
         
-        GLuint VAO;
-        // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
-        glGenVertexArrays( 1, &VAO );
-        glBindVertexArray( VAO );
-        
+        VertexArray va;
         VertexBuffer vb(vertices, 4 * 2 * sizeof(float));
-        
-        // Position attribute
-        glEnableVertexAttribArray( 0 );
-        glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof( GLfloat ),0);
+        VertexBufferLayout(layout);
+        layout.Push<float>(2);
+        va.AddBuffer(vb, layout);
         
         IndexBuffer ib(indices, 6);
         
@@ -173,7 +171,7 @@ int main( )
         
         int location = glGetUniformLocation(shader, "u_Color");
         //ASSERT(location != -1);
-        glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f );
+         glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f );
         
         float r = 0.0;
         float increment = 0.05f;
@@ -181,20 +179,20 @@ int main( )
         while ( !glfwWindowShouldClose( window ) )
         {
             // Check if any events have been activiated (key pressed, mouse moved etc.)
-            glfwPollEvents( );
+            GLCall(glfwPollEvents( ));
             
             // Render
             // Clear the colorbuffer
-            glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
-            glClear( GL_COLOR_BUFFER_BIT );
+            //glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
+            GLCall(glClear( GL_COLOR_BUFFER_BIT ));
             
             glUseProgram(shader);
             glUniform4f(location, r, 0.3f, 0.8f, 1.0f );
             
-            glBindVertexArray( VAO );
+            va.Bind();
             ib.Bind();
-            glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr );
-            glBindVertexArray(0);
+            
+            GLCall(glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr ));
             
             if (r > 1.0f)
                 increment = -0.05f;
@@ -204,15 +202,12 @@ int main( )
             r += increment;
             
             // Swap the screen buffers
-            glfwSwapBuffers( window );
+            GLCall(glfwSwapBuffers( window ));
         }
-        
-        // Properly de-allocate all resources once they've outlived their purpose
-        glDeleteVertexArrays( 1, &VAO );
         
     }
     // Terminate GLFW, clearing any resources allocated by GLFW.
-    glfwTerminate( );
+    GLCall(glfwTerminate( ));
     
     return EXIT_SUCCESS;
 }
