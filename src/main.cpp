@@ -8,28 +8,12 @@
 #include <GL/glew.h>
 // GLFW
 #include  <GLFW/glfw3.h>
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
+ 
 
 
-#define ASSERT(x) if ((!x)) raise(SIGTRAP);
-#define GLCall(x) GLClearError();\
-    x;\
-ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-static void GLClearError()
-{
-    while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char* function, const char* file, int line)
-{
-    while (GLenum error = glGetError())
-    {
-        std::cout << "openGL error (" << error << " ): " << function <<
-            " " << file << ":" << line <<  std::endl;
-        return false;
-    }
-    return true;
-}
 
 struct ShaderProgramSource
 {
@@ -155,81 +139,78 @@ int main( )
     std::cout << source.VertexSource << std::endl;
     std::cout << "FRAGMENT" << std::endl;
     std::cout << source.FragmentSource << std::endl;
-    
-    // Set up vertex data (and buffer(s)) and attribute pointers
-    GLfloat vertices[] =
     {
-        // Positions           // Colors
-         -0.5f, -0.5f, //0.0f,   //0.0f, 1.0f, 0.0f,  // Bottom Right
-          0.5f, -0.5f, //0.0f,   //1.0f, 0.0f, 0.0f,  // Bottom Left
-          0.5f,  0.5f, //0.0f,   //0.0f, 0.0f, 1.0f,   // Top
-         -0.5f,  0.5f, //0.0f,    //1.0f, 0.0f, 0.0f
-    };
-    
-     unsigned int indices[] =
-    {
-         0,1,2,
-         2,3,0
-    };
-    
-    GLuint VBO, VAO, ibo;
-    // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
-    glGenVertexArrays( 1, &VAO );
-    glBindVertexArray( VAO );
-    
-    glGenBuffers( 1, &VBO );
-    glBindBuffer( GL_ARRAY_BUFFER, VBO );
-    glBufferData( GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW );
-    // Position attribute
-    glEnableVertexAttribArray( 0 );
-    glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof( GLfloat ),0);
-    
-    glGenBuffers(1, &ibo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * 2 * sizeof(float), indices, GL_STATIC_DRAW);
-    glBindVertexArray( 0 );
-    
-    unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-    
-    int location = glGetUniformLocation(shader, "u_Color");
-    //ASSERT(location != -1);
-    glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f );
-    
-    float r = 0.0;
-    float increment = 0.05f;
-    // Game loop
-    while ( !glfwWindowShouldClose( window ) )
-    {
-        // Check if any events have been activiated (key pressed, mouse moved etc.)
-        glfwPollEvents( );
+        // Set up vertex data (and buffer(s)) and attribute pointers
+        GLfloat vertices[] =
+        {
+            // Positions
+            -0.5f, -0.5f,  // Bottom Right
+            0.5f, -0.5f,  // Bottom Left
+            0.5f,  0.5f,  // Top
+            -0.5f,  0.5f
+        };
         
-        // Render
-        // Clear the colorbuffer
-        glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
-        glClear( GL_COLOR_BUFFER_BIT );
+        unsigned int indices[] =
+        {
+            0,1,2,
+            2,3,0
+        };
         
-        glUseProgram(shader);
-        glUniform4f(location, r, 0.3f, 0.8f, 1.0f );
-        
+        GLuint VAO;
+        // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
+        glGenVertexArrays( 1, &VAO );
         glBindVertexArray( VAO );
-        glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr );
-        glBindVertexArray(0);
         
-        if (r > 1.0f)
-            increment = -0.05f;
-        else if (r < 0)
-            increment = 0.05f;
+        VertexBuffer vb(vertices, 4 * 2 * sizeof(float));
         
-        r += increment;
+        // Position attribute
+        glEnableVertexAttribArray( 0 );
+        glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof( GLfloat ),0);
         
-        // Swap the screen buffers
-        glfwSwapBuffers( window );
+        IndexBuffer ib(indices, 6);
+        
+        unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
+        
+        int location = glGetUniformLocation(shader, "u_Color");
+        //ASSERT(location != -1);
+        glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f );
+        
+        float r = 0.0;
+        float increment = 0.05f;
+        // Game loop
+        while ( !glfwWindowShouldClose( window ) )
+        {
+            // Check if any events have been activiated (key pressed, mouse moved etc.)
+            glfwPollEvents( );
+            
+            // Render
+            // Clear the colorbuffer
+            glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
+            glClear( GL_COLOR_BUFFER_BIT );
+            
+            glUseProgram(shader);
+            glUniform4f(location, r, 0.3f, 0.8f, 1.0f );
+            
+            glBindVertexArray( VAO );
+            ib.Bind();
+            glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr );
+            glBindVertexArray(0);
+            
+            if (r > 1.0f)
+                increment = -0.05f;
+            else if (r < 0)
+                increment = 0.05f;
+            
+            r += increment;
+            
+            // Swap the screen buffers
+            glfwSwapBuffers( window );
+        }
+        
+        // Properly de-allocate all resources once they've outlived their purpose
+        glDeleteVertexArrays( 1, &VAO );
+        
     }
-    
-    // Properly de-allocate all resources once they've outlived their purpose
-    glDeleteVertexArrays( 1, &VAO );
-    glDeleteBuffers( 1, &VBO );
-    
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate( );
     
