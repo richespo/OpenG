@@ -94,14 +94,13 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
     
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program);
+    GLCall( glAttachShader(program, vs));
+    GLCall(glAttachShader(program, fs));
+    GLCall(glLinkProgram(program));
+    GLCall(glValidateProgram(program));
     
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-    
+    GLCall(glDeleteShader(vs));
+    GLCall(glDeleteShader(fs));
     return program;
 }
 
@@ -124,6 +123,8 @@ int main( )
     
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow *window = glfwCreateWindow( WIDTH, HEIGHT, "LearnOpenGL", nullptr, nullptr );
+    
+    glfwSwapInterval(1);
     
     int screenWidth, screenHeight;
     glfwGetFramebufferSize( window, &screenWidth, &screenHeight );
@@ -159,10 +160,10 @@ int main( )
     GLfloat vertices[] =
     {
         // Positions           // Colors
-         -0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,  // Bottom Right
-          0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // Bottom Left
-          0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   // Top
-        -0.5f,  0.5f, 0.0f,    1.0f, 0.0f, 0.0f
+         -0.5f, -0.5f, //0.0f,   //0.0f, 1.0f, 0.0f,  // Bottom Right
+          0.5f, -0.5f, //0.0f,   //1.0f, 0.0f, 0.0f,  // Bottom Left
+          0.5f,  0.5f, //0.0f,   //0.0f, 0.0f, 1.0f,   // Top
+         -0.5f,  0.5f, //0.0f,    //1.0f, 0.0f, 0.0f
     };
     
      unsigned int indices[] =
@@ -172,44 +173,54 @@ int main( )
     };
     
     GLuint VBO, VAO, ibo;
-    glGenVertexArrays( 1, &VAO );
-    glGenBuffers( 1, &VBO );
-    glGenBuffers(1, &ibo);
-    
     // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
+    glGenVertexArrays( 1, &VAO );
     glBindVertexArray( VAO );
+    
+    glGenBuffers( 1, &VBO );
     glBindBuffer( GL_ARRAY_BUFFER, VBO );
     glBufferData( GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW );
-    
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
-    
     // Position attribute
-    glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof( GLfloat ), ( GLvoid * ) 0 );
     glEnableVertexAttribArray( 0 );
-    // Color attribute
-    glVertexAttribPointer( 1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof( GLfloat ), ( GLvoid * )( 3 * sizeof( GLfloat ) ) );
-    glEnableVertexAttribArray( 1 );
-    glBindVertexArray( 0 ); // Unbind VAO
+    glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof( GLfloat ),0);
+    
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * 2 * sizeof(float), indices, GL_STATIC_DRAW);
+    glBindVertexArray( 0 );
     
     unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-        glUseProgram(shader);
     
+    int location = glGetUniformLocation(shader, "u_Color");
+    //ASSERT(location != -1);
+    glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f );
+    
+    float r = 0.0;
+    float increment = 0.05f;
     // Game loop
     while ( !glfwWindowShouldClose( window ) )
     {
-        // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
+        // Check if any events have been activiated (key pressed, mouse moved etc.)
         glfwPollEvents( );
         
         // Render
         // Clear the colorbuffer
         glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
         glClear( GL_COLOR_BUFFER_BIT );
-    
-        // Draw the triangle
+        
+        glUseProgram(shader);
+        glUniform4f(location, r, 0.3f, 0.8f, 1.0f );
+        
         glBindVertexArray( VAO );
-        GLCall(glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr ));
+        glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr );
         glBindVertexArray(0);
+        
+        if (r > 1.0f)
+            increment = -0.05f;
+        else if (r < 0)
+            increment = 0.05f;
+        
+        r += increment;
         
         // Swap the screen buffers
         glfwSwapBuffers( window );
@@ -224,10 +235,4 @@ int main( )
     
     return EXIT_SUCCESS;
 }
-
-
-
-
-
-
 
