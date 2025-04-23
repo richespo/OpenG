@@ -12,15 +12,9 @@
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
+#include "Shader.h"
  
 
-
-
-struct ShaderProgramSource
-{
-    std::string VertexSource;
-    std::string FragmentSource;
-};
 
 static ShaderProgramSource ParseShader(const std::string& filepath)
 {
@@ -72,18 +66,17 @@ static unsigned int CompileShader(unsigned int type, const std::string& source )
     return id;
 }
 
-
 static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
     unsigned int program = glCreateProgram();
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-    
+                     
     GLCall( glAttachShader(program, vs));
     GLCall(glAttachShader(program, fs));
     GLCall(glLinkProgram(program));
     GLCall(glValidateProgram(program));
-    
+                     
     GLCall(glDeleteShader(vs));
     GLCall(glDeleteShader(fs));
     return program;
@@ -134,8 +127,6 @@ int main( )
     // Define the viewport dimensions
     GLCall(glViewport( 0, 0, screenWidth, screenHeight ));
     
-    // Build and compile our shader program
-    ShaderProgramSource source = ParseShader("res/shaders/basic.shader");
     /*
     std::cout << "VERTEX" << std::endl;
     std::cout << source.VertexSource << std::endl;
@@ -167,12 +158,15 @@ int main( )
         
         IndexBuffer ib(indices, 6);
         
-        unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
-        
-        int location = glGetUniformLocation(shader, "u_Color");
-        //ASSERT(location != -1);
-         glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f );
-        
+        Shader shader("res/shaders/basic.shader");
+        shader.Bind();
+        shader.SetUniform4f("u_Color",  0.2f, 0.3f, 0.8f, 1.0f);
+         
+         va.Unbind();
+         vb.Unbind();
+         ib.Unbind();
+         shader.Unbind();
+         
         float r = 0.0;
         float increment = 0.05f;
         // Game loop
@@ -181,17 +175,12 @@ int main( )
             // Check if any events have been activiated (key pressed, mouse moved etc.)
             GLCall(glfwPollEvents( ));
             
-            // Render
-            // Clear the colorbuffer
-            //glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
             GLCall(glClear( GL_COLOR_BUFFER_BIT ));
-            
-            glUseProgram(shader);
-            glUniform4f(location, r, 0.3f, 0.8f, 1.0f );
+            shader.Bind();
+            shader.SetUniform4f("u_Color",  r, 0.3f, 0.8f, 1.0f );
             
             va.Bind();
             ib.Bind();
-            
             GLCall(glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr ));
             
             if (r > 1.0f)
@@ -204,7 +193,6 @@ int main( )
             // Swap the screen buffers
             GLCall(glfwSwapBuffers( window ));
         }
-        
     }
     // Terminate GLFW, clearing any resources allocated by GLFW.
     GLCall(glfwTerminate( ));
