@@ -7,7 +7,7 @@
 #include "VertexArray.h"
 #include "Renderer.h"
 #include "assert.h"
-
+#include "VertexBufferLayout.h"
 
 
 VertexArray::VertexArray()

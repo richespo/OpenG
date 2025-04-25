@@ -10,12 +10,19 @@
 #include  <GLFW/glfw3.h>
 #include "Renderer.h"
 #include "VertexBuffer.h"
+#include "VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
  
 
+#define assert(x) if ((!x)) raise(SIGTRAP);
+#define GLCall(x) GLClearError();\
+    x;\
+assert(GLLogCall(#x, __FILE__, __LINE__))
 
+
+/*
 static ShaderProgramSource ParseShader(const std::string& filepath)
 {
     enum class ShaderType
@@ -81,7 +88,7 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
     GLCall(glDeleteShader(fs));
     return program;
 }
-
+ */
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -167,6 +174,8 @@ int main( )
          ib.Unbind();
          shader.Unbind();
          
+         Renderer renderer;
+         
         float r = 0.0;
         float increment = 0.05f;
         // Game loop
@@ -175,13 +184,13 @@ int main( )
             // Check if any events have been activiated (key pressed, mouse moved etc.)
             GLCall(glfwPollEvents( ));
             
-            GLCall(glClear( GL_COLOR_BUFFER_BIT ));
+            renderer.Clear();
             shader.Bind();
             shader.SetUniform4f("u_Color",  r, 0.3f, 0.8f, 1.0f );
             
             va.Bind();
             ib.Bind();
-            GLCall(glDrawElements( GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr ));
+            renderer.Draw(va, ib, shader);
             
             if (r > 1.0f)
                 increment = -0.05f;
