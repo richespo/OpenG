@@ -89,6 +89,14 @@ unsigned int Shader::CreateShader(const std::string& vertexShader, const std::st
     GLCall(glAttachShader(program, fs));
     GLCall(glLinkProgram(program));
     GLCall(glValidateProgram(program));
+    
+    textureUniformLocation = glGetUniformLocation(program, "u_Texture");
+    if (textureUniformLocation == -1)
+        std::cout << "Warning uniform u_Texture doesnt exist" << std::endl;
+    colorUniformLocation = glGetUniformLocation(program, "u_Color");
+    if (textureUniformLocation == -1)
+        std::cout << "Warning uniform u_Color doesnt exist" << std::endl;
+    
                      
     GLCall(glDeleteShader(vs));
     GLCall(glDeleteShader(fs));
@@ -109,19 +117,25 @@ void Shader::Unbind() const
 
 void Shader::SetUniform1i(const std::string& name, int value)
 {
-    GLCall(glUniform1i(GetUniformLocation(name), value));
+    //GLCall(glUniform1i(GetUniformLocation(name), value));
+    GLCall(glUniform1i(textureUniformLocation, value));
 }
 
+/*
 void Shader::SetUniform1f(const std::string& name, float value)
 {
     GLCall(glUniform1f(GetUniformLocation(name), value));
 }
+*/
 
 void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
 {
-    GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
+    //if (name == "u_Color")
+    //GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
+    GLCall(glUniform4f(colorUniformLocation, v0, v1, v2, v3));
 }
 
+/*
 int Shader::GetUniformLocation(const std::string& name)
 {
     if (m_UniformLocationCache.find(name) != m_UniformLocationCache.end())
@@ -135,6 +149,7 @@ int Shader::GetUniformLocation(const std::string& name)
     m_UniformLocationCache[name] =  location;
     return location;
 }
+*/
 
 
 

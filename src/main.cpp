@@ -14,6 +14,7 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Texture.h"
  
 
 #define assert(x) if ((!x)) raise(SIGTRAP);
@@ -21,74 +22,6 @@
     x;\
 assert(GLLogCall(#x, __FILE__, __LINE__))
 
-
-/*
-static ShaderProgramSource ParseShader(const std::string& filepath)
-{
-    enum class ShaderType
-    {
-        NONE = -1, VERTEX = 0, FRAGMENT = 1
-    };
-    std::ifstream stream(filepath);
-    std::string line;
-    ShaderType type = ShaderType::NONE;
-    std::stringstream ss[2];
-    while (getline(stream, line))
-    {
-       if (line.find("#shader") != std::string::npos)
-       {
-           if (line.find("vertex") != std::string::npos)
-               type = ShaderType::VERTEX;
-           else if (line.find("fragment") != std::string::npos)
-               type = ShaderType::FRAGMENT;
-       }
-       else
-       {
-           ss[(int)type] << line << std::endl;
-       }
-    }
-    return { ss[0].str(), ss[1].str()};
-}
- 
-static unsigned int CompileShader(unsigned int type, const std::string& source )
-{
-    unsigned int id = glCreateShader(type);
-    const char* src = source.c_str();
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
-                      
-    int result;
-    GLCall(glGetShaderiv(id, GL_COMPILE_STATUS, &result));
-    if (result == GL_FALSE)
-    {
-        int length;
-        GLCall(glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length));
-        char* message = (char*)alloca(length * sizeof(char)) ;
-        GLCall(glGetShaderInfoLog(id, length, &length, message));
-        std::cout << "Failed to compile shader" << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << std::endl;
-        std::cout << message << std::endl;
-        GLCall(glDeleteShader(id));
-        return 0;
-    }
-    return id;
-}
-
-static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
-{
-    unsigned int program = glCreateProgram();
-    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
-    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
-                     
-    GLCall( glAttachShader(program, vs));
-    GLCall(glAttachShader(program, fs));
-    GLCall(glLinkProgram(program));
-    GLCall(glValidateProgram(program));
-                     
-    GLCall(glDeleteShader(vs));
-    GLCall(glDeleteShader(fs));
-    return program;
-}
- */
 
 // Window dimensions
 const GLuint WIDTH = 800, HEIGHT = 600;
@@ -142,14 +75,14 @@ int main( )
     */
      {
         // Set up vertex data (and buffer(s)) and attribute pointers
-        GLfloat vertices[] =
-        {
-            // Positions
-            -0.5f, -0.5f,  // Bottom Right
-            0.5f, -0.5f,  // Bottom Left
-            0.5f,  0.5f,  // Top
-            -0.5f,  0.5f
-        };
+         GLfloat vertices[] =
+         {
+             // Positions
+             -0.5f, -0.5f, 0.0f, 0.0f,  // Bottom Right
+              0.5f, -0.5f, 1.0f, 0.0f, // Bottom Left
+              0.5f,  0.5f, 1.0f, 1.0f,  // Top
+             -0.5f,  0.5f, 0.0f, 1.0f
+         };
         
         unsigned int indices[] =
         {
@@ -157,9 +90,13 @@ int main( )
             2,3,0
         };
         
+         GLCall(glEnable(GL_BLEND));
+         GLCall(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+         
         VertexArray va;
-        VertexBuffer vb(vertices, 4 * 2 * sizeof(float));
+        VertexBuffer vb(vertices, 4 * 4 * sizeof(float));
         VertexBufferLayout(layout);
+        layout.Push<float>(2);
         layout.Push<float>(2);
         va.AddBuffer(vb, layout);
         
@@ -167,7 +104,11 @@ int main( )
         
         Shader shader("res/shaders/basic.shader");
         shader.Bind();
-        shader.SetUniform4f("u_Color",  0.2f, 0.3f, 0.8f, 1.0f);
+        //shader.SetUniform4f("u_Color",  0.2f, 0.3f, 0.8f, 1.0f);
+         
+         Texture texture("res/textures/jeanlogo.png");
+         texture.Bind();
+         shader.SetUniform1i("u_Texture", 0);
          
          va.Unbind();
          vb.Unbind();

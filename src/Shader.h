@@ -24,7 +24,8 @@ private:
      
     //cache for uniforms
     
-public: 
+public:
+    
     Shader(const std::string& filepath);
     ~Shader();
     
@@ -36,6 +37,10 @@ public:
     void SetUniform1f(const std::string& name, float value);
     void SetUniform4f(const std::string& name, float v0, float v1, float v3, float v4);
 
+    unsigned int colorUniformLocation = 0;
+    unsigned int textureUniformLocation = 0;
+    
+    
 private:
     ShaderProgramSource ParseShader(const std::string& filepath);
     unsigned int CompileShader(unsigned int type, const std::string& source );

@@ -12,7 +12,7 @@
 #include "IndexBuffer.h"
 #include "Shader.h"
 
-#define assert(x) if (!(x)) raise(SIGTRAP);
+#define assert(x) if (!(x)) raise(SIGABRT);
 #define GLCall(x) GLClearError();\
     x;\
 assert(GLLogCall(#x, __FILE__, __LINE__))
