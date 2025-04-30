@@ -17,6 +17,10 @@
 #include "Texture.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
 
 #define assert(x) if ((!x)) raise(SIGTRAP);
 #define GLCall(x) GLClearError();\
@@ -68,6 +72,21 @@ int main( )
     // Define the viewport dimensions
     GLCall(glViewport( 0, 0, screenWidth, screenHeight ));
     
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+    ImGui::StyleColorsDark();
+    
+    
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+    
     /*
     std::cout << "VERTEX" << std::endl;
     std::cout << source.VertexSource << std::endl;
@@ -76,6 +95,7 @@ int main( )
     */
      {
         // Set up vertex data (and buffer(s)) and attribute pointers
+         /*
          GLfloat vertices[] =
          {
              // Positions
@@ -84,7 +104,16 @@ int main( )
               0.5f,  0.5f, 1.0f, 1.0f,  // Top
              -0.5f,  0.5f, 0.0f, 1.0f
          };
-        
+        */
+         GLfloat vertices[] =
+         {
+             // Positions
+             0.0f, 0.0f,            0.0f, 0.0f,  // Bottom Left
+              400.0f, 0.0f,         1.0f, 0.0f, // Bottom Right
+              400.0f,  300.0f,          1.0f, 1.0f,  // Top
+             0.0f,  300.0f,          0.0f, 1.0f
+         };
+         
         unsigned int indices[] =
         {
             0,1,2,
@@ -103,13 +132,17 @@ int main( )
          
          IndexBuffer ib(indices, 6);
         
-         glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+         glm::mat4 proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, -1.0f, 1.0f);
+         glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+
          
+         //glm::mat4 model = glm::translate(glm::mat4(1.0f));
+         //glm::mat4 mvp = proj * view * model;
          
         Shader shader("res/shaders/basic.shader");
         shader.Bind();
         shader.SetUniform4f("u_Color",  0.2f, 0.3f, 0.8f, 1.0f);
-        shader.SetUniformMat4f("u_MVP", proj); 
+        // shader.SetUniformMat4f("u_MVP", mvp);
          
          Texture texture("res/textures/jeanlogo.png");
          texture.Bind();
@@ -122,6 +155,11 @@ int main( )
          
          Renderer renderer;
          
+         ImGui_ImplGlfw_InitForOpenGL(window, true);
+         ImGui_ImplOpenGL3_Init("#version 150");
+        
+         glm::vec3 translation(200, 200, 0);
+         
         float r = 0.0;
         float increment = 0.05f;
         // Game loop
@@ -131,8 +169,17 @@ int main( )
             GLCall(glfwPollEvents( ));
             
             renderer.Clear();
+            
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+           
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+            glm::mat4 mvp = proj * view * model;
+            
             shader.Bind();
             shader.SetUniform4f("u_Color",  r, 0.3f, 0.8f, 1.0f );
+            shader.SetUniformMat4f("u_MVP", mvp);
             
             va.Bind();
             ib.Bind();
@@ -145,11 +192,25 @@ int main( )
             
             r += increment;
             
+    {
+        ImGui::Begin("Hi");
+            ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 800.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+          
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        ImGui::End();
+        
+    }
+
+            ImGui::Render();
+            
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             // Swap the screen buffers
             GLCall(glfwSwapBuffers( window ));
         }
     }
     // Terminate GLFW, clearing any resources allocated by GLFW.
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     GLCall(glfwTerminate( ));
     
     return EXIT_SUCCESS;

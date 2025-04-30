@@ -39,8 +39,8 @@ public:
     void SetUniform4f(const std::string& name, float v0, float v1, float v3, float v4);
     void SetUniformMat4f(const std::string& name, const glm::mat4& matrix);
     
-    //unsigned int colorUniformLocation = 0;
-    //unsigned int textureUniformLocation = 0;
+    unsigned int colorUniformLocation = 0;
+    unsigned int textureUniformLocation = 0;
     
     
 private:
