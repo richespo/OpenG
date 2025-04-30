@@ -90,13 +90,13 @@ unsigned int Shader::CreateShader(const std::string& vertexShader, const std::st
     GLCall(glLinkProgram(program));
     GLCall(glValidateProgram(program));
     
-    
+    /*
     textureUniformLocation = glGetUniformLocation(program, "u_Texture");
     std::cout << "textureUniformLocation " << textureUniformLocation << std::endl;
     
     colorUniformLocation = glGetUniformLocation(program, "u_Color");
     std::cout << "colorUniformLocation " << colorUniformLocation << std::endl;
-    
+    */
 
                      
     GLCall(glDeleteShader(vs));
@@ -118,8 +118,8 @@ void Shader::Unbind() const
 
 void Shader::SetUniform1i(const std::string& name, int value)
 {
-    //GLCall(glUniform1i(GetUniformLocation(name), value));
-    GLCall(glUniform1i(textureUniformLocation, value));
+    GLCall(glUniform1i(GetUniformLocation(name), value));
+    //GLCall(glUniform1i(textureUniformLocation, value));
 }
 
 /*
@@ -131,8 +131,8 @@ void Shader::SetUniform1f(const std::string& name, float value)
 
 void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)
 {
-    //GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
-    GLCall(glUniform4f(colorUniformLocation, v0, v1, v2, v3));
+    GLCall(glUniform4f(GetUniformLocation(name), v0, v1, v2, v3));
+    //GLCall(glUniform4f(colorUniformLocation, v0, v1, v2, v3));
     
 }
 
